@@ -36,8 +36,10 @@ passport.use(
       secretOrKey: JWT_SECRET
     },
     function(jwtPayload, done) {
-      return Users.findOne({ _id: jwtPayload._id })
-        .then(user => done(null, user))
+      return Users.findOne({ _id: jwtPayload.id })
+        .then(user => {
+          done(null, user);
+        })
         .catch(err => done(err));
     }
   )

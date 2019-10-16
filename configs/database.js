@@ -3,7 +3,8 @@ var mongoose = require("mongoose");
 
 //database setup
 mongoose.connect("mongodb://wi1205:wi1205@ds335668.mlab.com:35668/caro", {
-  useNewUrlParser: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 var database = mongoose.connection;
 

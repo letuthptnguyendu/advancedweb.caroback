@@ -13,6 +13,7 @@ router.get("/me", passport.authenticate("jwt", { session: false }), function(
   req,
   res
 ) {
+  console.log(req.user);
   res.status(200).send(req.user);
 });
 
