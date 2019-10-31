@@ -1,13 +1,17 @@
-var createError = require("http-errors");
+var httpErrors = require("http-errors");
 var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+var morgan = require("morgan");
+var cors = require("cors");
+const passport = require("passport");
+var session = require("express-session");
 
 var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
-
+var usersRouter = require("./routes/user");
 var app = express();
+
+const { SESSION_SECRET } = require("./configs/key");
 
 // connect database
 require("./configs/database");
@@ -16,20 +20,29 @@ require("./configs/database");
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
+// session and passport
+app.use(
+  session({ secret: SESSION_SECRET, resave: true, saveUninitialized: true })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
 require("./configs/body_parser")(app);
 require("./configs/passport");
 
-app.use(logger("dev"));
+app.use(cors());
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use("/", indexRouter);
 app.use("/user", usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  next(httpErrors(404));
 });
 
 // error handler

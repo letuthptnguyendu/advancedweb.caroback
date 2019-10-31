@@ -9,22 +9,23 @@ const { JWT_SECRET } = require("../configs/key");
 const Users = require("../models/users");
 
 /* GET users listing. */
-router.get("/me", passport.authenticate("jwt", { session: false }), function(
-  req,
-  res
-) {
+router.get("/me", passport.authenticate("jwt"), function(req, res) {
   console.log(req.user);
   res.status(200).send(req.user);
 });
 
 /* POST users listing. */
 router.post("/register", function(req, res, next) {
+  console.log(req.body);
   // check user
   Users.findOne({ username: req.body.username })
     .then(user => {
       debug("suc get user", user);
 
-      res.status(500).send("This username has been used already!");
+      if (user) {
+        res.statusCode = 409;
+        return res.status(409).send("Username already exists!");
+      }
     })
     .catch(next);
 
@@ -39,36 +40,44 @@ router.post("/register", function(req, res, next) {
     // hash successfully
     const user = new Users({
       username: req.body.username,
+      fullname: req.body.fullname,
+      avatar: req.body.avatar,
+      email: req.body.email,
       password: hashedPwd
     });
 
     // save into database
     user
       .save()
-      .then(user => debug("suc save new user", user))
+      .then(result => {
+        debug("suc save new user", result);
+        if (result) {
+          return res.status(201).send("Created successfully!");
+        }
+      })
       .catch(next);
   });
 });
 
 router.post("/login", function(req, res, next) {
-  passport.authenticate("local", { session: false }, (err, user, info) => {
+  passport.authenticate("local", (err, user, info) => {
     if (err || !user) {
-      return res.status(400).json({
-        message: "Something is not right",
+      return res.status(401).json({
+        message: info && info.message,
         user: user
       });
     }
 
     // login info ok
-    req.login(user, { session: false }, err => {
+    req.login(user, err => {
       if (err) {
-        res.send(err);
+        return res.status(500).send(err);
       }
 
       const token = jwt.sign({ id: user._id }, JWT_SECRET);
-      return res.json({ user, token });
+      return res.status(200).json({ user, token });
     });
-  })(req, res);
+  })(req, res, next);
 });
 
 module.exports = router;
