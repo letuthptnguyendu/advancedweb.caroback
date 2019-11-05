@@ -7,10 +7,12 @@
 var app = require("../app");
 var debug = require("debug")("caro-back:server");
 var http = require("http");
+const socketIO = require('socket.io')
 
-/**
- * Get port from environment and store in Express.
- */
+const Games = require('../models/games')
+    /**
+     * Get port from environment and store in Express.
+     */
 
 var port = normalizePort(process.env.PORT || "4000");
 app.set("port", port);
@@ -20,6 +22,44 @@ app.set("port", port);
  */
 
 var server = http.createServer(app);
+const io = socketIO(server)
+let pendingList = []
+
+
+io.on('connection', socket => {
+    console.log(pendingList)
+
+    console.log('User connected')
+
+    socket.on("pending", id => {
+        pendingList.push(id)
+
+        if (pendingList[0] && pendingList[1]) {
+            const game = new Games({
+                user_id: pendingList[0],
+                user2_id: pendingList[1],
+                type: "pvp",
+                history: [],
+                status: ""
+            });
+
+            game
+                .save()
+                .then(data => {
+                    io.sockets.emit('join-game', data)
+
+                    pendingList.shift()
+                    pendingList.shift()
+                })
+                .catch(err => console.log("letu err save game", err));
+        }
+    });
+
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected')
+    })
+})
 
 /**
  * Listen on provided port, on all network interfaces.

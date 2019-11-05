@@ -1,13 +1,37 @@
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy;
+
 const bcrypt = require("bcrypt");
 const passportJWT = require("passport-jwt");
 
-const { JWT_SECRET } = require("../configs/key");
+const {
+  JWT_SECRET,
+  ROOT_URL,
+  FACEBOOK_APP_ID,
+  FACEBOOK_APP_SECRET
+} = require("../configs/key");
 const Users = require("../models/users");
 
 const ExtractJWT = passportJWT.ExtractJwt;
 const JWTStrategy = passportJWT.Strategy;
+
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: FACEBOOK_APP_ID,
+      clientSecret: FACEBOOK_APP_SECRET,
+      callbackURL: `${ROOT_URL}/auth/facebook/callback`
+    },
+    function(accessToken, refreshToken, profile, done) {
+      console.log(profile);
+      // User.findOrCreate(..., function(err, user) {
+      //   if (err) { return done(err); }
+      //   done(null, user);
+      // });
+    }
+  )
+);
 
 passport.use(
   new LocalStrategy(function(username, password, done) {
